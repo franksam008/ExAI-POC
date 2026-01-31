@@ -18,13 +18,14 @@ class WorkflowTemplateORM(Base):
 
 
 class WorkflowTemplateRepository(BaseRepository):
-    def list_all(self) -> List[WorkflowTemplateORM]:
-        return (
-            self.db.query(WorkflowTemplateORM)
-            .filter(WorkflowTemplateORM.tenant_id == self.tenant_id)
-            .order_by(WorkflowTemplateORM.created_at.desc())
-            .all()
+    def list_all(self, category: Optional[str] = None) -> List[WorkflowTemplateORM]:
+        q = self.db.query(WorkflowTemplateORM).filter(
+            WorkflowTemplateORM.tenant_id == self.tenant_id            
         )
+        if category:
+            q = q.filter(WorkflowTemplateORM.category == category)
+        return q.order_by(WorkflowTemplateORM.created_at.desc()).all()
+        
 
     def get(self, template_id: str) -> Optional[WorkflowTemplateORM]:
         return (

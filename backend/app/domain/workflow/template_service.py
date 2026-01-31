@@ -1,6 +1,6 @@
 from uuid import uuid4
 import json
-from typing import List
+from typing import List, Optional
 from app.infra.repositories.workflow_template_repo import WorkflowTemplateRepository, WorkflowTemplateORM
 from app.schemas.workflow_template_schemas import WorkflowTemplateCreateSchema, WorkflowTemplateSchema
 
@@ -8,8 +8,8 @@ class WorkflowTemplateService:
     def __init__(self, repo: WorkflowTemplateRepository):
         self.repo = repo
 
-    def list_templates(self) -> List[WorkflowTemplateSchema]:
-        rows = self.repo.list_all()
+    def list_templates(self, category: Optional[str]) -> List[WorkflowTemplateSchema]:
+        rows = self.repo.list_all(category)
         return [
             WorkflowTemplateSchema(
                 id=r.id,
