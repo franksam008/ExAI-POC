@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  # -----------------------------
+  # 1. SQLite（持久化）
+  # -----------------------------
+  sqlite:
+    image: nouchka/sqlite3
+    container_name: exai_sqlite
+    volumes:
+      - ./exai_poc.db:/data/exai_poc.db
+    command: tail -f /dev/null
+
+  # -----------------------------
+  # 2. MLflow Tracking Server
+  # -----------------------------
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: exai_mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+      - ./mlflow.db:/mlflow.db
+    command: >
+      mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlruns --host 0.0.0.0 --port 5000
+
+  # -----------------------------
+  # 3. H2O
+  # -----------------------------
+  h2o:
+    image: opsh2oai/h2o-open-source:latest
+    container_name: exai_h2o
+    ports:
+      - "54321:54321"
+    command: java -jar /opt/h2o.jar
+
+  # -----------------------------
+  # 4. FastAPI 后端
+  # -----------------------------
+  backend:
+    build:
+      context: ./backend
+    container_name: exai_backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "sqlite:////data/exai_poc.db"
+      MLFLOW_TRACKING_URI: "http://mlflow:5000"
+      H2O_URL: "http://h2o:54321"
+    volumes:
+      - ./exai_poc.db:/data/exai_poc.db
+      - ./backend:/app
+    depends_on:
+      - sqlite
+      - mlflow
+      - h2o
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  # -----------------------------
+  # 5. 前端
+  # -----------------------------
+  frontend:
+    build:
+      context: ./frontend
+    container_name: exai_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+
+networks:
+  default:
+    name: exai_network
