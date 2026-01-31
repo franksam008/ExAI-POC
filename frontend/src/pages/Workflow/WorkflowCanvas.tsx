@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button, message } from 'antd';
+import { useLocation } from 'react-router-dom';
 import NodePalette from '../../components/Workflow/NodePalette';
 import Canvas from '../../components/Workflow/Canvas';
 import NodePropertiesPanel from '../../components/Workflow/NodePropertiesPanel';
@@ -45,6 +46,15 @@ const WorkflowCanvas: React.FC = () => {
             message.error('执行失败');
         }
     };
+
+    const location = useLocation();
+    useEffect(() => {
+        if (location.state?.template) {
+            const tpl = location.state.template;
+            setNodes(tpl.nodes);
+        }
+    }, [location.state]);
+
 
     return (
         <div style={{ display: 'flex', gap: 16 }}>

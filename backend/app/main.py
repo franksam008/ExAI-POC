@@ -6,6 +6,7 @@ from app.api.v1 import (
     auth_api,
     data_api,
     workflow_api,
+    workflow_template_api,
     model_api,
     registry_api, 
     deploy_api, 
@@ -30,7 +31,8 @@ app.add_middleware(
 
 app.include_router(auth_api.router, prefix="/api/v1") 
 app.include_router(data_api.router, prefix="/api/v1") 
-app.include_router(workflow_api.router, prefix="/api/v1") 
+app.include_router(workflow_api.router, prefix="/api/v1")
+app.include_router(workflow_template_api.router, prefix="/api/v1")
 app.include_router(model_api.router, prefix="/api/v1") 
 app.include_router(registry_api.router, prefix="/api/v1") 
 app.include_router(deploy_api.router, prefix="/api/v1") 

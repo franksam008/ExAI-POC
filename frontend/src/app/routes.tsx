@@ -12,6 +12,8 @@ import DatasetPreview from '../pages/Data/DatasetPreview';
 
 // Workflow module
 import WorkflowCanvas from '../pages/Workflow/WorkflowCanvas';
+import WorkflowTemplateList from '../pages/Workflow/WorkflowTemplateList';
+import WorkflowTemplateDetail from '../pages/Workflow/WorkflowTemplateDetail';
 
 // Deploy module
 import ServiceList from '../pages/Deploy/ServiceList';
@@ -43,6 +45,8 @@ const AppRoutes: React.FC = () => {
 
                 {/* Workflow module */}
                 <Route path="workflow" element={<WorkflowCanvas />} />
+                <Route path="workflow/templates" element={<WorkflowTemplateList />} />
+                <Route path="workflow/templates/:id" element={<WorkflowTemplateDetail />} />
 
                 {/* Deploy module */}
                 <Route path="deploy" element={<ServiceList />} />
