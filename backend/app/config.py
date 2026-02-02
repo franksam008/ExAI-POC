@@ -8,7 +8,12 @@ import os
 
 class Settings(BaseModel):
     # 数据库连接（POC 用 SQLite 或 PostgreSQL 均可）
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./backend/data/exai_poc.db")
+    BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
+    DB_PATH: str = os.path.join(BASE_DIR, "..", 
+                           "data", "exai_poc.db")
+    # print(f"sqlite:///{os.path.abspath(DB_PATH)}")
+
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{os.path.abspath(DB_PATH)}")
 
     # H2O 相关配置
     H2O_URL: str = os.getenv("H2O_URL", "http://localhost:54321")

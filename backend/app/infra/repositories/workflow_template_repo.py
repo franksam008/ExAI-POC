@@ -18,7 +18,7 @@ class WorkflowTemplateORM(Base):
 
 
 class WorkflowTemplateRepository(BaseRepository):
-    def list_all(self, category: Optional[str] = None) -> List[WorkflowTemplateORM]:
+    def list_template(self, category: Optional[str] = None) -> List[WorkflowTemplateORM]:
         q = self.db.query(WorkflowTemplateORM).filter(
             WorkflowTemplateORM.tenant_id == self.tenant_id            
         )
@@ -27,7 +27,7 @@ class WorkflowTemplateRepository(BaseRepository):
         return q.order_by(WorkflowTemplateORM.created_at.desc()).all()
         
 
-    def get(self, template_id: str) -> Optional[WorkflowTemplateORM]:
+    def get_by_id(self, template_id: str) -> Optional[WorkflowTemplateORM]:
         return (
             self.db.query(WorkflowTemplateORM)
             .filter(
@@ -37,6 +37,22 @@ class WorkflowTemplateRepository(BaseRepository):
             .first()
         )
 
+    def get_by_name(self, name: str) -> Optional[WorkflowTemplateORM]:
+        return (
+            self.db.query(WorkflowTemplateORM)
+            .filter(
+                WorkflowTemplateORM.tenant_id == self.tenant_id,
+                WorkflowTemplateORM.name == name,
+            )
+            .first()
+        )
+
     def save(self, tpl: WorkflowTemplateORM):
         self.db.add(tpl)
         self.db.commit()
+
+    def delete(self, category_id: str):
+        row = self.get_by_id(category_id)
+        if row:
+            self.db.delete(row)
+            self.db.commit()

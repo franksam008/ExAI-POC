@@ -18,7 +18,7 @@ def list_templates(category: Optional[str] = None,
 @router.get("/{template_id}", response_model=WorkflowTemplateSchema)
 def get_template(template_id: str, 
                  svc: WorkflowTemplateService = Depends(get_workflow_template_service)):
-    return svc.get_template(template_id)
+    return svc.get_template_by_id(template_id)
 
 
 @router.post("", response_model=str)

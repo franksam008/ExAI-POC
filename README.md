@@ -67,8 +67,8 @@ DATABASE_URL = "postgresql://user:password@localhost:5432/exai_poc"
 ### 2.4 启动 MLflow Tracking Server
 ```bash
 mlflow server \
-  --backend-store-uri sqlite:///mlflow.db \
-  --default-artifact-root ./mlruns \
+  --backend-store-uri sqlite:///./backend/data/mlflow.db \
+  --default-artifact-root ./backend/data/mlruns \
   --host 0.0.0.0 --port 5000
 ```
 ### 2.5 启动 H2O

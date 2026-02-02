@@ -9,7 +9,7 @@ class WorkflowTemplateService:
         self.repo = repo
 
     def list_templates(self, category: Optional[str]) -> List[WorkflowTemplateSchema]:
-        rows = self.repo.list_all(category)
+        rows = self.repo.list_template(category)
         return [
             WorkflowTemplateSchema(
                 id=r.id,
@@ -21,8 +21,8 @@ class WorkflowTemplateService:
             for r in rows
         ]
 
-    def get_template(self, template_id: str) -> WorkflowTemplateSchema | None:
-        r = self.repo.get(template_id)
+    def get_template_by_id(self, template_id: str) -> WorkflowTemplateSchema | None:
+        r = self.repo.get_by_id(template_id)
         if r:
             return WorkflowTemplateSchema(
                 id=r.id,
