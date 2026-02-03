@@ -96,6 +96,24 @@ def run():
     """)
 
     # ------------------------------------------------------------
+    # 5. 数据源表
+    # ------------------------------------------------------------
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS data_sources (
+    id VARCHAR(64) NOT NULL PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    type VARCHAR(32) NOT NULL,
+    config_json TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX idx_data_sources_tenant_id ON data     _sources (tenant_id);
+    """)
+
+
+    # ------------------------------------------------------------
     # 6. 数据集元数据表
     # ------------------------------------------------------------
     cursor.execute("""

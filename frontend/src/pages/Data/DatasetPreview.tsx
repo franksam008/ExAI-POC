@@ -1,6 +1,6 @@
 // src/pages/Data/DatasetPreview.tsx
 import React, { useEffect, useState } from 'react';
-import { getDatasetPreview } from '../../api/dataApi';
+import { previewDataset } from '../../api/dataApi';
 import { Table, Select } from 'antd';
 
 /**
@@ -13,7 +13,7 @@ const DatasetPreview: React.FC = () => {
 
     useEffect(() => {
         if (datasetId) {
-            getDatasetPreview(datasetId).then(setData);
+            previewDataset(datasetId).then(setData);
         }
     }, [datasetId]);
 

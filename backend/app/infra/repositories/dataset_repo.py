@@ -18,11 +18,18 @@ class DatasetORM(Base):
     source_id: Mapped[str] = mapped_column(String(64), index=True)  # 如 local_db
     name: Mapped[str] = mapped_column(String(128), nullable=False)  # 展示名称
     table_name: Mapped[str] = mapped_column(String(128), nullable=False)  # 实际 DB 表名
-    description: Mapped[str] = mapped_column(Text, nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-
 class DatasetRepository(BaseRepository):
+    def list_all(self) -> List[DatasetORM]:
+        return (
+            self.db.query(DatasetORM) 
+            .filter(DatasetORM.tenant_id == self.tenant_id) 
+            .order_by(DatasetORM.created_at.desc()) 
+            .all()
+        )    
+
     def list_by_source(self, source_id: str) -> List[DatasetORM]:
         return (
             self.db.query(DatasetORM)
@@ -43,3 +50,13 @@ class DatasetRepository(BaseRepository):
             )
             .first()
         )
+
+    def save(self, row: DatasetORM):
+        self.db.add(row)
+        self.db.commit()
+
+    def delete(self, dataset_id: str):
+        row = self.get(dataset_id)
+        if row:
+            self.db.delete(row)
+            self.db.commit()

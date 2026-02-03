@@ -40,8 +40,10 @@ const AppRoutes: React.FC = () => {
 
                 {/* Data module */}
                 <Route path="data" element={<DataSourceList />} />
+                <Route path="data/sources" element={<DataSourceList />} />
+                <Route path="/data/sources/:sourceId/datasets" element={<DatasetList />} />
                 <Route path="data/datasets" element={<DatasetList />} />
-                <Route path="data/preview" element={<DatasetPreview />} />
+                <Route path="/data/datasets/:datasetId/preview" element={<DatasetPreview />} />
 
                 {/* Workflow module */}
                 <Route path="workflow" element={<WorkflowCanvas />} />

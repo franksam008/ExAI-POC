@@ -3,41 +3,154 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import pandas as pd
 from app.dependencies import get_db, get_current_tenant_id
-from app.infra.repositories.dataset_repo import DatasetRepository
-from app.schemas.data_schemas import DataSourceSchema, DatasetSchema, DatasetPreviewSchema
+from app.infra.repositories.datasource_repo import DataSourceRepository, DataSourceORM
+from app.infra.repositories.dataset_repo import DatasetRepository, DatasetORM
+from app.schemas.data_schemas import (
+    DataSourceSchema, 
+    DataSourceCreateSchema, 
+    DataSourceUpdateSchema,
+    DatasetSchema, 
+    DatasetCreateSchema, 
+    DatasetUpdateSchema, 
+    DatasetPreviewSchema)
+import json
+from uuid import uuid4
 
 router = APIRouter(prefix="/data", tags=["data"])
 
+# -------------------------
+# 数据源 CRUD
+# -------------------------
 @router.get("/sources", response_model=list[DataSourceSchema])
-def list_data_sources():
+def list_data_sources(db: Session = Depends(get_db),
+                  tenant_id: str = Depends(get_current_tenant_id)):
     """
     数据源列表：
-    POC：返回一个固定的“本地数据库”数据源。
     """
+    repo = DataSourceRepository(db, tenant_id)
+    ds = repo.list_all()
+
+    return [DataSourceSchema(
+        id=d.id, 
+        name=d.name, 
+        type=d.type, 
+        config=json.loads(d.config_json if d.config_json else "{}")) 
+        for d in ds]
+
+@router.post("/sources", response_model=str)
+def create_source(payload: DataSourceCreateSchema, 
+                  db: Session = Depends(get_db), 
+                  tenant_id: str = Depends(get_current_tenant_id)): 
+    repo = DataSourceRepository(db, tenant_id) 
+    row = DataSourceORM( 
+        id=str(uuid4()), 
+        tenant_id=tenant_id, 
+        name=payload.name, 
+        type=payload.type, 
+        config_json=json.dumps(payload.config), 
+    ) 
+    repo.save(row) 
+    return row.id
+
+@router.put("/sources/{source_id}")
+def update_source(source_id: str, 
+                  payload: DataSourceUpdateSchema, 
+                  db: Session = Depends(get_db), 
+                  tenant_id: str = Depends(get_current_tenant_id)): 
+    repo = DataSourceRepository(db, tenant_id) 
+    row = repo.get(source_id)
+    if row:
+        row.name = payload.name 
+        row.type = payload.type 
+        row.config_json = json.dumps(payload.config)
+        repo.save(row) 
+    return {"status": "ok"}
+
+@router.delete("/sources/{source_id}")
+def delete_source(source_id: str, 
+                  db: Session = Depends(get_db), 
+                  tenant_id: str = Depends(get_current_tenant_id)): 
+    repo = DataSourceRepository(db, tenant_id) 
+    repo.delete(source_id) 
+    return {"status": "ok"}
+
+# -------------------------
+# 数据集 CRUD
+# -------------------------
+@router.get("/datasets", response_model=list[DatasetSchema])
+def list_all_datasets(db: Session = Depends(get_db), 
+                      tenant_id: str = Depends(get_current_tenant_id)):
+    repo = DatasetRepository(db, tenant_id)
+    rows = repo.list_all()
     return [
-        {
-            "id": "local_db",
-            "name": "本地数据库",
-            "type": "db",
-        }
+        DatasetSchema(
+            id=r.id,
+            name=r.name,
+            source_id=r.source_id,
+            table_name=r.table_name,
+            description=r.description,
+        )
+        for r in rows
     ]
 
-
 @router.get("/sources/{source_id}/datasets", response_model=list[DatasetSchema])
-def list_datasets(source_id: str,
+def list_datasets_by_source(source_id: str,
                   db: Session = Depends(get_db),
                   tenant_id: str = Depends(get_current_tenant_id)):
     """
     数据集列表：
-    POC：通过 information_schema 查询所有表。
     """
     repo = DatasetRepository(db, tenant_id)
     ds = repo.list_by_source(source_id)
-    return [DatasetSchema(id=d.id, name=d.name) for d in ds]
+    return [
+        DatasetSchema(
+            id=r.id,
+            name=r.name,
+            source_id=r.source_id,
+            table_name=r.table_name,
+            description=r.description,
+        )
+        for r in ds
+    ]
+
+
+@router.post("/datasets", response_model=str)
+def create_dataset(payload: DatasetCreateSchema, db: Session = Depends(get_db), tenant_id: str = Depends(get_current_tenant_id)):
+    repo = DatasetRepository(db, tenant_id)
+    row = DatasetORM(
+        id=str(uuid4()),
+        tenant_id=tenant_id,
+        name=payload.name,
+        source_id=payload.source_id,
+        table_name=payload.table_name,
+        description=payload.description,
+    )
+    repo.save(row)
+    return row.id
+
+
+@router.put("/datasets/{dataset_id}")
+def update_dataset(dataset_id: str, payload: DatasetUpdateSchema, db: Session = Depends(get_db), tenant_id: str = Depends(get_current_tenant_id)):
+    repo = DatasetRepository(db, tenant_id)
+    row = repo.get(dataset_id)
+    if row:
+        row.name = payload.name
+        row.source_id = payload.source_id
+        row.table_name = payload.table_name
+        row.description = payload.description
+        repo.save(row)
+    return {"status": "ok"}
+
+
+@router.delete("/datasets/{dataset_id}")
+def delete_dataset(dataset_id: str, db: Session = Depends(get_db), tenant_id: str = Depends(get_current_tenant_id)):
+    repo = DatasetRepository(db, tenant_id)
+    repo.delete(dataset_id)
+    return {"status": "ok"}
 
 
 @router.get("/datasets/{dataset_id}/preview")
-def dataset_preview(dataset_id: str, 
+def preview_dataset(dataset_id: str, 
                     page: int = 1, 
                     page_size: int = 20,
                     db: Session = Depends(get_db),
@@ -62,7 +175,6 @@ def dataset_preview(dataset_id: str,
         rows=df.to_dict(orient="records"),
     )
 
-
 @router.get("/datasets/{dataset_id}/profile")
 def dataset_profile(dataset_id: str,
                     db: Session = Depends(get_db),
@@ -81,3 +193,8 @@ def dataset_profile(dataset_id: str,
     return {
         "summary": desc.to_dict(orient="records"),
     }
+
+
+
+
+
