@@ -7,7 +7,7 @@ from app.domain.model_govern.models import (
     ModelService,
     ServiceStatus,
 )
-from app.adapters.mlflow_adapter import MLflowClientAdapter
+from app.adapters.mlflow_adapter import MLflowAdapter
 from app.infra.repositories.service_repo import ServiceRepository
 
 """
@@ -17,14 +17,14 @@ from app.infra.repositories.service_repo import ServiceRepository
 """
 
 class ModelGovernService:
-    def __init__(self, mlflow_client: MLflowClientAdapter, service_repo: ServiceRepository):
+    def __init__(self, mlflow_client: MLflowAdapter, service_repo: ServiceRepository):
         self.mlflow_client = mlflow_client
         self.service_repo = service_repo
 
     def register_model(self, name: str, artifact_uri: str, description: str = "") -> ModelRegistryEntry:
         version = self.mlflow_client.register_model(artifact_uri, name)
         # 默认阶段设为 Staging
-        self.mlflow_client.transition_model_stage(name, version, ModelStage.STAGING.value)
+        self.mlflow_client.transition_stage(name, int(version), ModelStage.STAGING.value)
         return ModelRegistryEntry(
             name=name,
             version=int(version),

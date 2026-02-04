@@ -16,7 +16,7 @@ class Settings(BaseModel):
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{os.path.abspath(DB_PATH)}")
 
     # H2O 相关配置
-    H2O_URL: str = os.getenv("H2O_URL", "http://localhost:54321")
+    H2O_BASE_URL: str = os.getenv("H2O_BASE_URL", "http://localhost:54321")
 
     # MLflow 相关配置
     MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")

@@ -11,7 +11,8 @@ import DatasetList from '../pages/Data/DatasetList';
 import DatasetPreview from '../pages/Data/DatasetPreview';
 
 // Workflow module
-import WorkflowCanvas from '../pages/Workflow/WorkflowCanvas';
+import WorkflowList from '../pages/Workflow/WorkflowList';
+import WorkflowEditor from '../pages/Workflow/WorkflowEditor';
 import WorkflowTemplateList from '../pages/Workflow/WorkflowTemplateList';
 import WorkflowTemplateDetail from '../pages/Workflow/WorkflowTemplateDetail';
 
@@ -46,7 +47,9 @@ const AppRoutes: React.FC = () => {
                 <Route path="/data/datasets/:datasetId/preview" element={<DatasetPreview />} />
 
                 {/* Workflow module */}
-                <Route path="workflow" element={<WorkflowCanvas />} />
+                <Route path="/workflows" element={<WorkflowList />} />
+                <Route path="/workflows/create" element={<WorkflowEditor />} />
+                <Route path="/workflows/:workflowId" element={<WorkflowEditor />} />
                 <Route path="workflow/templates" element={<WorkflowTemplateList />} />
                 <Route path="workflow/templates/:id" element={<WorkflowTemplateDetail />} />
 

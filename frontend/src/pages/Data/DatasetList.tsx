@@ -84,7 +84,7 @@ const DatasetList: React.FC = () => {
         <div>
             <h3>数据集管理</h3>
             <Button type="primary" onClick={openCreate}>新建数据集</Button>&nbsp;
-            <Button type="primary" onClick={ruturnToDatasource}>返回数据源</Button>
+            <Button type="primary" onClick={ruturnToDatasource}>&lArr;返回数据源</Button>
             <Table
                 rowKey="id"
                 dataSource={data}
@@ -94,7 +94,7 @@ const DatasetList: React.FC = () => {
                     {
                         title: '数据源名',
                         dataIndex: 'source_id',
-                        render: (id) => datasourceMap[id] || `##{id}`
+                        render: (id) => datasourceMap[id] || `#${id}`
                     },
                     { title: '表名', dataIndex: 'table_name' },
                     { title: '描述', dataIndex: 'description' },

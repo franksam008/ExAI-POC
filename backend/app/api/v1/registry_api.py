@@ -1,7 +1,7 @@
 # app/api/v1/registry_api.py
 from fastapi import APIRouter
 from app.schemas.registry_schemas import RegisterModelRequest, ModelRegistryEntrySchema
-from app.adapters.mlflow_adapter import MLflowSdkAdapter
+from app.adapters.mlflow_adapter import MLflowAdapter
 from app.domain.model_govern.service import ModelGovernService
 from app.infra.db import SessionLocal
 from app.infra.repositories.service_repo import ServiceRepository
@@ -15,7 +15,7 @@ def register_model(req: RegisterModelRequest):
     模型注册接口：
     - 直接调用 ModelGovernService.register_model
     """
-    mlflow_client = MLflowSdkAdapter()
+    mlflow_client = MLflowAdapter()
     db = SessionLocal()
     try:
         service_repo = ServiceRepository(db)

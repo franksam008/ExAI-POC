@@ -69,9 +69,9 @@ const DataSourceList: React.FC = () => {
             <Table
                 rowKey="id"
                 dataSource={data}
-                onRow={(record) => ({
+                /*onRow={(record) => ({
                     onClick: () => onRowClick(record),
-                })}
+                })}*/
                 style={{ marginTop: 8 }}
                 columns={[
                     //{ title: 'ID', dataIndex: 'id' },
@@ -97,6 +97,7 @@ const DataSourceList: React.FC = () => {
                                 <Popconfirm title="确认删除？" onConfirm={() => deleteDataSource(r.id).then(fetchData)}>
                                     <Button danger type="link">删除</Button>
                                 </Popconfirm>
+                                <Button type="link" onClick={() => onRowClick(r)}>数据集&rArr;</Button>
                             </>
                         ),
                     },

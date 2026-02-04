@@ -1,25 +1,20 @@
 // src/api/workflowApi.ts
 import http from './http';
 
-export type NodeType =
-    | 'data_source'
-    | 'train'
-    | 'register'
-    | 'deploy';
+export const listWorkflows = () =>
+    http.get('/workflows').then(r => r.data);
 
-export interface WorkflowNode {
-    id: string;
-    type: NodeType;
-    name: string;
-    params: Record<string, any>;
-    upstream_ids: string[];
-}
+export const getWorkflow = (id: string) =>
+    http.get(`/workflows/${id}`).then(r => r.data);
 
-export interface WorkflowDefinition {
-    name: string;
-    description?: string;
-    nodes: WorkflowNode[];
-}
+export const createWorkflow = (payload: any) =>
+    http.post('/workflows', payload).then(r => r.data);
 
-export const runWorkflow = (workflowId: string, wf: WorkflowDefinition) =>
-    http.post(`/workflows/${workflowId}/run`, wf).then((res) => res.data);
+export const updateWorkflow = (id: string, payload: any) =>
+    http.put(`/workflows/${id}`, payload).then(r => r.data);
+
+export const deleteWorkflow = (id: string) =>
+    http.delete(`/workflows/${id}`).then(r => r.data);
+
+export const runWorkflow = (id: string) =>
+    http.post(`/workflows/${id}/run`).then(r => r.data);

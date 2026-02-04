@@ -3,9 +3,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 import random
+from app.adapters.mlflow_adapter import MLflowAdapter
 
 router = APIRouter(prefix="/monitor", tags=["monitor"])
-
 
 class MetricPoint(BaseModel):
     timestamp: str
@@ -35,24 +35,26 @@ def get_service_metrics(service_id: str):
     return points
 
 
-from fastapi import APIRouter
-from app.adapters.mlflow_adapter import MLflowSdkAdapter
-
 @router.get("/models/{name}/{version}")
 def get_model_metrics(name: str, version: str):
     """
     从 MLflow 中获取某个模型版本的指标
     """
-    client = MLflowSdkAdapter()
-    mlflow_client = client._get_mlflow_client()
-    mv = mlflow_client.get_model_version(name=name, version=version)
-    if mv and mv.run_id:
-        run = mlflow_client.get_run(mv.run_id)
-        return {
-        "name": name,
-        "version": version,
-        "metrics": run.data.metrics,
-        "params": run.data.params,
-        }
+    client = MLflowAdapter()
+
+    mvs = client.list_model_versions(model_name=name)
+    if mvs:
+        for mv in mvs:
+            run_id = mv.run_id
+            if run_id and mv.version == version:
+
+                run = client.get_run_params_metrics(run_id)
+                return {
+                "name": name,
+                "version": version,
+                "metrics": run["metrics"],
+                "params": run["params"],
+                "tags": run["tags"],
+                }
     else:
         return {}

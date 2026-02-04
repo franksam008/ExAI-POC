@@ -1,67 +1,87 @@
-# app/adapters/h2o_adapter.py
-import h2o
-from typing import Dict, Any
-from abc import ABC, abstractmethod
+# backend/app/adapters/h2o_adapter.py
+import requests
+from typing import Any, Dict, List
 from app.config import settings
 
-"""
-H2O 适配器：封装 H2O 的训练与预测能力。
-POC 中只实现单机 H2O + 一种算法（GBM）。
-"""
 
-class H2OClient(ABC):
-    @abstractmethod
-    def import_dataset(self, source_ref: str):
-        """
-        导入数据集。
-        source_ref：可以是 SQL 或表名，这里简化为 CSV 路径或表名。
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def train_model(self, frame, target: str, params: Dict[str, Any]) -> str:
-        """
-        训练模型，返回模型 ID。
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_model_metrics(self, model_id: str) -> Dict[str, float]:
-        """
-        获取模型评估指标。
-        """
-        raise NotImplementedError
-
-
-class H2OHttpClient(H2OClient):
+class H2OAdapter:
     def __init__(self):
-        # 重要：初始化 H2O 连接，单机模式即可
-        h2o.connect(url=settings.H2O_URL)
+        self.base = settings.H2O_BASE_URL.rstrip("/")
 
-    def import_dataset(self, source_ref: str):
-        # POC 简化：假设 source_ref 是 CSV 文件路径
-        # 实际可扩展为从数据库读取后转为 H2OFrame
-        return h2o.import_file(source_ref)
+    # ---------- 通用 ----------
+    def _wait_job(self, job_id: str):
+        while True:
+            r = requests.get(f"{self.base}/3/Jobs/{job_id}")
+            r.raise_for_status()
+            job = r.json()["jobs"][0]
+            if job["status"] == "DONE":
+                return
+            if job["status"] == "FAILED":
+                raise RuntimeError(f"H2O job failed: {job_id}")
 
-    def train_model(self, frame, target: str, params: Dict[str, Any]) -> str:
-        from h2o.estimators import H2OGradientBoostingEstimator
+    def _get_model_from_job(self, job_id: str) -> str:
+        r = requests.get(f"{self.base}/3/Jobs/{job_id}")
+        r.raise_for_status()
+        return r.json()["jobs"][0]["dest"]["name"]
 
-        # 重要：这里只实现一种算法（GBM），但接口预留扩展空间
-        model = H2OGradientBoostingEstimator(
-            ntrees=params.get("ntrees", 50),
-            max_depth=params.get("max_depth", 5),
-            learn_rate=params.get("learn_rate", 0.1),
-        )
-        x = [c for c in frame.columns if c != target]
-        model.train(x=x, y=target, training_frame=frame)
-        return model.model_id
+    # ---------- 数据 / Frame ----------
+    def import_file(self, path: str) -> str:
+        r = requests.post(f"{self.base}/3/ImportFiles", data={"path": path})
+        r.raise_for_status()
+        return r.json()["destination_frames"][0]["name"]
 
-    def get_model_metrics(self, model_id: str) -> Dict[str, float]:
-        model = h2o.get_model(model_id)
-        perf = model.model_performance()
-        # 重要：只返回少量核心指标，POC 足够
-        metrics = {
-            "auc": getattr(perf, "auc", None),
-            "logloss": getattr(perf, "logloss", None),
-        }
-        return {k: float(v) for k, v in metrics.items() if v is not None}
+    def list_frames(self) -> List[Dict[str, Any]]:
+        r = requests.get(f"{self.base}/3/Frames")
+        r.raise_for_status()
+        return r.json()["frames"]
+
+    # ---------- 预处理 / 特征工程 ----------
+    def standardize(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        # params 至少包含 training_frame
+        r = requests.post(f"{self.base}/3/ModelBuilders/standardize", json=params)
+        r.raise_for_status()
+        job_id = r.json()["job"]["key"]["name"]
+        self._wait_job(job_id)
+        return {"job_id": job_id, "training_frame": params["training_frame"]}
+
+    def pca(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        r = requests.post(f"{self.base}/3/ModelBuilders/pca", json=params)
+        r.raise_for_status()
+        job_id = r.json()["job"]["key"]["name"]
+        self._wait_job(job_id)
+        return {"job_id": job_id, "training_frame": params["training_frame"]}
+
+    # ---------- 训练（统一入口，支持 GBM/DRF/GLM/XGBoost/AutoML 等） ----------
+    def train(self, algo: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        params 至少包含: training_frame, response_column
+        其他超参直接透传
+        """
+        r = requests.post(f"{self.base}/3/ModelBuilders/{algo}", json=params)
+        r.raise_for_status()
+        job_id = r.json()["job"]["key"]["name"]
+        self._wait_job(job_id)
+        model_id = self._get_model_from_job(job_id)
+        return {"job_id": job_id, "model_id": model_id}
+
+    # ---------- 评估 ----------
+    def evaluate(self, model_id: str, frame_id: str) -> Dict[str, Any]:
+        r = requests.get(f"{self.base}/3/Models/{model_id}/frames/{frame_id}")
+        r.raise_for_status()
+        metrics = r.json()["model_metrics"][0]
+        return {"metrics": metrics}
+
+    # ---------- 预测 ----------
+    def predict(self, model_id: str, frame_id: str) -> Dict[str, Any]:
+        r = requests.post(f"{self.base}/3/Predictions/models/{model_id}/frames/{frame_id}")
+        r.raise_for_status()
+        pred_frame = r.json()["predictions_frame"]["name"]
+        return {"predictions_frame": pred_frame}
+
+    # ---------- 模型导出 ----------
+    def download_model(self, model_id: str, path: str) -> Dict[str, Any]:
+        r = requests.get(f"{self.base}/3/Models/{model_id}/download")
+        r.raise_for_status()
+        with open(path, "wb") as f:
+            f.write(r.content)
+        return {"model_path": path}

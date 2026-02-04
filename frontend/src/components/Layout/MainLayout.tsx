@@ -11,14 +11,14 @@ const MainLayout: React.FC = () => {
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <Sider>
-                <div style={{ color: '#fff', padding: 16, fontWeight: 'bold' }}>ExAI POC</div>
+                <div style={{ color: '#fff', padding: 16, fontWeight: 'bold' }}>ExAI全生命周期平台</div>
                 <Sidebar />
             </Sider>
             <Layout>
                 <Header style={{ background: '#fff', paddingLeft: 16 }}>
                     <HeaderBar />
                 </Header>
-                <Content style={{ margin: 16, background: '#fff', padding: 16 }}>
+                <Content style={{ margin: 8, background: '#fff', padding: 8 }}>
                     <Outlet />
                 </Content>
             </Layout>

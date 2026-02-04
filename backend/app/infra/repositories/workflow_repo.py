@@ -1,8 +1,8 @@
 # app/infra/repositories/workflow_repo.py
 from sqlalchemy import Column, String, Text, DateTime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Mapped, mapped_column
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from app.infra.db import Base
 from app.infra.repositories.base_repo import BaseRepository
 
@@ -14,35 +14,41 @@ from app.infra.repositories.base_repo import BaseRepository
 class WorkflowORM(Base):
     __tablename__ = "workflows"
 
-    id = Column(String(36), primary_key=True, index=True)
-    tenant_id = Column(String(64), index=True)
-    name = Column(String(128), nullable=False)
-    description = Column(Text, nullable=True)
-    definition_json = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: Mapped[str]= mapped_column(String(36), primary_key=True, index=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), index=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    definition_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class WorkflowRepository(BaseRepository):
-    """
-    工作流仓储：
-    - 负责保存与读取工作流定义
-    """
-
-    def save(self, wf_id: str, tenant_id: str, name: str, description: str, definition_json: str) -> None:
-        obj = WorkflowORM(
-            id=wf_id,
-            tenant_id=tenant_id,
-            name=name,
-            description=description,
-            definition_json=definition_json,
-        )
-        self.db.add(obj)
-        self.db.commit()
-
-    def get(self, wf_id: str, tenant_id: str) -> Optional[WorkflowORM]:
+    def list_all(self) -> List[WorkflowORM]:
         return (
             self.db.query(WorkflowORM)
-            .filter(WorkflowORM.id == wf_id, WorkflowORM.tenant_id == tenant_id)
+            .filter(WorkflowORM.tenant_id == self.tenant_id)
+            .order_by(WorkflowORM.created_at.desc())
+            .all()
+        )
+
+    def get(self, wf_id: str) -> Optional[WorkflowORM]:
+        return (
+            self.db.query(WorkflowORM)
+            .filter(
+                WorkflowORM.tenant_id == self.tenant_id,
+                WorkflowORM.id == wf_id,
+            )
             .first()
         )
+
+    def save(self, row: WorkflowORM):
+        self.db.add(row)
+        self.db.commit()
+
+    def delete(self, wf_id: str):
+        row = self.get(wf_id)
+        if row:
+            self.db.delete(row)
+            self.db.commit()
+
