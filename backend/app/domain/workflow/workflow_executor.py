@@ -1,7 +1,7 @@
 # backend/app/domain/workflow/workflow_executor.py
 from typing import Dict, Any
 from app.schemas.workflow_schemas import WorkflowDAGSchema
-from app.adapters.h2o_adapter import H2OAdapter
+from app.adapters.h2o_adapter import H2OHttpAdapter
 from app.adapters.mlflow_adapter import MLflowAdapter
 import os
 import tempfile
@@ -9,7 +9,7 @@ import tempfile
 
 class WorkflowExecutor:
     def __init__(self):
-        self.h2o = H2OAdapter()
+        self.h2o = H2OHttpAdapter()
         self.mlflow = MLflowAdapter()
 
     def execute(self, dag: WorkflowDAGSchema) -> Dict[str, Any]:
@@ -22,6 +22,27 @@ class WorkflowExecutor:
             if node.type == "h2o_import":
                 frame_id = self.h2o.import_file(params["path"])
                 result = {"frame_id": frame_id}
+
+            elif node.type == "h2o_list_frames":
+                frames = self.h2o.list_frames()
+                result = {"frames": frames}
+            
+            elif node.type == "h2o_parse_setup":
+                parseSetup = self.h2o.parse_setup(params["source_frames"])
+                result = {"parse_setup": parseSetup}
+
+            elif node.type == "h2o_parse":
+                parse = self.h2o.parse(destination_frame=params["destination_frame"], 
+                                       parse_setup=context["parse_setup"])
+                result = {"parse": parse}
+            
+            elif node.type == "h2o_split_frame":
+                destination_frames = self.h2o.split_frame(
+                    dataset=params["dataset"],
+                    ratios=params["ratios"],
+                    destination_frames=params["destination_frames"],
+                    seed=params["seed"])
+                result = {"destination_frames": destination_frames}
 
             elif node.type == "h2o_prep":
                 result = self.h2o.standardize(params)

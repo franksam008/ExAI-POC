@@ -25,6 +25,10 @@ import {
 
 const nodeTypeOptions = [
     { label: 'H2O 导入数据', value: 'h2o_import' },
+    { label: 'H2O 列出数据框', value: 'h2o_list_frames' },
+    { label: 'H2O 解析设置', value: 'h2o_parse_setup' },
+    { label: 'H2O 解析', value: 'h2o_parse' },
+    { label: 'H2O 拆分数据框', value: 'h2o_split_frame' },
     { label: 'H2O 预处理', value: 'h2o_prep' },
     { label: 'H2O PCA', value: 'h2o_pca' },
     { label: 'H2O 训练', value: 'h2o_train' },
@@ -263,6 +267,7 @@ const WorkflowEditor: React.FC = () => {
             message.warning('请先保存工作流');
             return;
         }
+        setRunResult("工作流运行中...")
         const res = await runWorkflow(workflowId!);
         setRunResult(res);
     };
@@ -315,7 +320,7 @@ const WorkflowEditor: React.FC = () => {
                 </Popconfirm>
 
                 {runResult && (
-                    <div style={{ marginTop: 16, maxHeight: 260, overflow: 'auto', fontSize: 12 }}>
+                    <div style={{ marginTop: 16, maxHeight: 260, overflow: 'auto', fontSize: 12, backgroundColor: 'lightgray' }}>
                         <pre>{JSON.stringify(runResult, null, 2)}</pre>
                     </div>
                 )}
@@ -339,7 +344,7 @@ const WorkflowEditor: React.FC = () => {
             </div>
 
             {/* 右侧：节点参数配置 */}
-            <Card style={{ width: 320 }} title="节点参数配置">
+            <Card style={{ width: 200 }} title="节点参数配置">
                 {selectedNodeId ? (
                     <Form form={form} layout="vertical">
                         <Form.Item name="label" label="节点名称" rules={[{ required: true }]}>

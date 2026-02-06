@@ -2,9 +2,9 @@
 import requests
 from typing import Any, Dict, List
 from app.config import settings
+import json
 
-
-class H2OAdapter:
+class H2OHttpAdapter:
     def __init__(self):
         self.base = settings.H2O_BASE_URL.rstrip("/")
 
@@ -28,13 +28,56 @@ class H2OAdapter:
     def import_file(self, path: str) -> str:
         r = requests.post(f"{self.base}/3/ImportFiles", data={"path": path})
         r.raise_for_status()
-        return r.json()["destination_frames"][0]["name"]
+        return r.json()["destination_frames"][0]
 
-    def list_frames(self) -> List[Dict[str, Any]]:
+    def list_frames(self) -> List[str]:
         r = requests.get(f"{self.base}/3/Frames")
         r.raise_for_status()
-        return r.json()["frames"]
+        return [item["frame_id"]["name"] for item in r.json()["frames"]]
+    
+    def parse_setup(self, source_frames: List[str]) -> Dict[str, Any]:
+        r = requests.post(f"{self.base}/3/ParseSetup", data={"source_frames": source_frames})
+        r.raise_for_status()
+        return r.json()
+    
+    def parse(self, destination_frame: str, parse_setup: Dict[str, Any]) -> Dict[str, Any]:        
+        all_parse_setup = {
+            "destination_frame": destination_frame,
+            "source_frames": [item["name"] for item in parse_setup["source_frames"]],
+            "parse_type": parse_setup["parse_type"],
+            "separator": parse_setup["separator"],
+            "single_quotes": parse_setup["single_quotes"],
+            "check_header": parse_setup["check_header"],
+            "number_columns": parse_setup["number_columns"],
+            "column_names": parse_setup["column_names"],
+            "column_types": parse_setup["column_types"],
+            #"domain": null,
+            "force_col_types": parse_setup["force_col_types"],
+            "na_strings": parse_setup["na_strings"],
+            "chunk_size": parse_setup["chunk_size"],
+            "delete_on_done": False,
+            "blocking": True,
+            "decrypt_tool": parse_setup["decrypt_tool"],
+            "custom_non_data_line_markers": parse_setup["custom_non_data_line_markers"],
+            "partition_by": parse_setup["partition_by"],
+            "tz_adjust_to_local": parse_setup["tz_adjust_to_local"],
+            "_exclude_fields": parse_setup["_exclude_fields"],
+            "skipped_columns": parse_setup["skipped_columns"],
+            "escapechar": parse_setup["escapechar"],
+        }
+        print(f"parse setup: {json.dumps(all_parse_setup)}")
+        r = requests.post(f"{self.base}/3/Parse", data=all_parse_setup)
+        r.raise_for_status()
+        return r.json()
 
+    def split_frame(self, dataset: str, ratios: List[float], destination_frames: List[str], seed: int = 1234) -> List[str]:
+        r = requests.post(f"{self.base}/3/SplitFrame", 
+                          data={"dataset": dataset, 
+                                "ratios": ratios, 
+                                "destination_frames": destination_frames})
+        r.raise_for_status()
+        return r.json()
+    
     # ---------- 预处理 / 特征工程 ----------
     def standardize(self, params: Dict[str, Any]) -> Dict[str, Any]:
         # params 至少包含 training_frame
