@@ -17,4 +17,4 @@ export const deleteWorkflow = (id: string) =>
     http.delete(`/workflows/${id}`).then(r => r.data);
 
 export const runWorkflow = (id: string) =>
-    http.post(`/workflows/${id}/run`).then(r => r.data);
+    http.post(`/workflows/${id}/run`, { timeout: 120000 }).then(r => r.data);

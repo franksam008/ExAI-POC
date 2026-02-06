@@ -65,7 +65,7 @@ class H2OHttpAdapter:
             "skipped_columns": parse_setup["skipped_columns"],
             "escapechar": parse_setup["escapechar"],
         }
-        print(f"parse setup: {json.dumps(all_parse_setup)}")
+        #print(f"parse setup: {json.dumps(all_parse_setup)}")
         r = requests.post(f"{self.base}/3/Parse", data=all_parse_setup)
         r.raise_for_status()
         return r.json()
@@ -76,19 +76,19 @@ class H2OHttpAdapter:
                                 "ratios": ratios, 
                                 "destination_frames": destination_frames})
         r.raise_for_status()
-        return r.json()
+        return [item["name"] for item in r.json()["destination_frames"]]
     
     # ---------- 预处理 / 特征工程 ----------
     def standardize(self, params: Dict[str, Any]) -> Dict[str, Any]:
         # params 至少包含 training_frame
-        r = requests.post(f"{self.base}/3/ModelBuilders/standardize", json=params)
+        r = requests.post(f"{self.base}/3/ModelBuilders/standardize", data=params)
         r.raise_for_status()
         job_id = r.json()["job"]["key"]["name"]
         self._wait_job(job_id)
         return {"job_id": job_id, "training_frame": params["training_frame"]}
 
     def pca(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        r = requests.post(f"{self.base}/3/ModelBuilders/pca", json=params)
+        r = requests.post(f"{self.base}/3/ModelBuilders/pca", data=params)
         r.raise_for_status()
         job_id = r.json()["job"]["key"]["name"]
         self._wait_job(job_id)
@@ -100,10 +100,35 @@ class H2OHttpAdapter:
         params 至少包含: training_frame, response_column
         其他超参直接透传
         """
-        r = requests.post(f"{self.base}/3/ModelBuilders/{algo}", json=params)
-        r.raise_for_status()
+        print(f"开始训练：{algo}")
+        print(f"训练参数: {json.dumps(params)}")
+
+        """
+        payload = {
+            "model_id": "iris_gbm_v1",
+            "training_frame": "iris_train",
+            "validation_frame": "iris_test",
+            "response_column": "variety",
+            "ntrees": 20,
+            "max_depth": 5,
+            "learn_rate": 0.1,
+            "seed": 1234
+        }     
+
+        print(f"硬编码训练参数: {json.dumps(payload)}")
+        """
+
+        r = requests.post(
+            f"{self.base}/3/ModelBuilders/{algo}",
+            data=params,                     # ← 必须解析成k1=v1&k2=v2...的形式，不能使用json
+            headers={"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"}  # ← 必须指定，不能使用application/json（通过h2o webui的post访问得出）
+        )
+
+        print(f"训练任务提交结果: \n {json.dumps(r.json())}")
+        r.raise_for_status()        
         job_id = r.json()["job"]["key"]["name"]
-        self._wait_job(job_id)
+        print(f"训练任务id: \n {job_id}")
+        #self._wait_job(job_id)
         model_id = self._get_model_from_job(job_id)
         return {"job_id": job_id, "model_id": model_id}
 
