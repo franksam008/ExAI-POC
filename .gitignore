@@ -399,3 +399,7 @@ out/
 # Package manager lock files (keep pnpm-lock.yaml for this project)
 # package-lock.json
 # yarn.lock
+
+# mlflow run
+/backend/data/mlruns/*
+/backend/data/*.db

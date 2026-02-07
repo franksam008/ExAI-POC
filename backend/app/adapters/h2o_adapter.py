@@ -68,7 +68,10 @@ class H2OHttpAdapter:
         #print(f"parse setup: {json.dumps(all_parse_setup)}")
         r = requests.post(f"{self.base}/3/Parse", data=all_parse_setup)
         r.raise_for_status()
-        return r.json()
+        return {
+            "source_frames": r.json()["source_frames"][0]["name"], 
+            "destination_frame": r.json()["destination_frame"]["name"]
+            }
 
     def split_frame(self, dataset: str, ratios: List[float], destination_frames: List[str], seed: int = 1234) -> List[str]:
         r = requests.post(f"{self.base}/3/SplitFrame", 
@@ -134,9 +137,11 @@ class H2OHttpAdapter:
 
     # ---------- 评估 ----------
     def evaluate(self, model_id: str, frame_id: str) -> Dict[str, Any]:
-        r = requests.get(f"{self.base}/3/Models/{model_id}/frames/{frame_id}")
+        r = requests.post(f"{self.base}/3/ModelMetrics/models/{model_id}/frames/{frame_id}")
+        print(f"评估路径：{self.base}/3/ModelMetrics/models/{model_id}/frames/{frame_id}")
         r.raise_for_status()
         metrics = r.json()["model_metrics"][0]
+        #return r.json()
         return {"metrics": metrics}
 
     # ---------- 预测 ----------
@@ -147,9 +152,17 @@ class H2OHttpAdapter:
         return {"predictions_frame": pred_frame}
 
     # ---------- 模型导出 ----------
-    def download_model(self, model_id: str, path: str) -> Dict[str, Any]:
-        r = requests.get(f"{self.base}/3/Models/{model_id}/download")
+    def export_model(self, export_type: str, model_id: str, export_path: str) -> Dict[str, Any]:
+        params = {
+            "dir" : export_path,
+            "force": True
+        }
+        if export_type == "bin":
+            url_path = f"{self.base}/99/Models.bin/{model_id}"
+        else:
+            url_path = f"{self.base}/99/Models.mojo/{model_id}"
+
+        r = requests.get(url_path, params=params)
         r.raise_for_status()
-        with open(path, "wb") as f:
-            f.write(r.content)
-        return {"model_path": path}
+
+        return {"model_id": model_id, "model_path": r.json()["dir"]}

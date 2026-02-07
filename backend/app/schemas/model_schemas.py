@@ -1,7 +1,8 @@
 # app/schemas/model_schemas.py
 from pydantic import BaseModel
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from app.domain.model_dev.models import AlgorithmType, TrainRequest
+from datetime import datetime
 
 class TrainRequestSchema(BaseModel):
     dataset_ref: str
@@ -38,3 +39,10 @@ class TrainResultSchema(BaseModel):
     metrics: Dict[str, float]
     artifact_uri: str
     mlflow_run_id: str
+
+class ModelInfoSchema(BaseModel):
+    name: str
+    version: str
+    current_stage: str
+    description: Optional[str]
+    last_updated_timestamp: datetime

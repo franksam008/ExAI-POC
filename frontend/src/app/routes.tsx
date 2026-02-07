@@ -57,7 +57,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="deploy" element={<ServiceList />} />
                 <Route path="deploy/:id" element={<ServiceDetail />} />
 
-                <Route path="model" element={<ModelList />} />
+                <Route path="models" element={<ModelList />} />
 
                 {/* Monitor module */}
                 <Route path="monitor" element={<ServiceMonitor />} />

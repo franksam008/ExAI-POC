@@ -20,7 +20,7 @@ http.interceptors.response.use(
 
 const http = axios.create({
     baseURL: '/api/v1', // 由 devServer 代理到 FastAPI
-    timeout: 15000,
+    timeout: 120000,
 });
 
 // 请求拦截：带上 token（如果有）

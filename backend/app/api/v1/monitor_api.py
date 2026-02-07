@@ -45,8 +45,8 @@ def get_model_metrics(name: str, version: str):
     mvs = client.list_model_versions(model_name=name)
     if mvs:
         for mv in mvs:
-            run_id = mv.run_id
-            if run_id and mv.version == version:
+            run_id = mv["run_id"]
+            if run_id and mv["version"] == version:
 
                 run = client.get_run_params_metrics(run_id)
                 return {

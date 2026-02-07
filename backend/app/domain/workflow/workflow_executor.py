@@ -17,7 +17,7 @@ class WorkflowExecutor:
         node_results: Dict[str, Any] = {}
 
         for node in dag.nodes:
-            params = {**node.params, **context}
+            params = {**context, **node.params}
 
             if node.type == "h2o_import":
                 frame_id = self.h2o.import_file(params["path"])
@@ -63,9 +63,16 @@ class WorkflowExecutor:
 
             elif node.type == "h2o_export":
                 tmp_dir = tempfile.gettempdir()
+                export_type = params["export_type"]
                 model_id = params["model_id"]
-                path = os.path.join(tmp_dir, f"{model_id}.zip")
-                result = self.h2o.download_model(model_id, path)
+                #path = os.path.join(tmp_dir, f"{model_id}.zip")
+                export_path = params["export_path"]
+                result = self.h2o.export_model(export_type, model_id, export_path)
+
+            elif node.type == "load_h2o_model":
+                model_name = params["model_name"]
+                model_path = params["model_path"]
+                result = self.mlflow.load_h2o_model(model_name, model_path)
 
             elif node.type == "mlflow_log":
                 run_id = self.mlflow.log_model_artifact(

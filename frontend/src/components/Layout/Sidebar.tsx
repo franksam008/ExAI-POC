@@ -12,7 +12,7 @@ const Sidebar: React.FC = () => {
     const menuItems = [
         { key: 'data', label: <Link to="/data">数据</Link> },
         { key: 'workflow', label: <Link to="/workflows">工作流</Link> },
-        { key: 'model', label: <Link to="/model">模型</Link> },
+        { key: 'model', label: <Link to="/models">模型</Link> },
         { key: 'deploy', label: <Link to="/deploy">部署</Link> },
         { key: 'monitor', label: <Link to="/monitor">监控</Link> },
         { key: 'system', label: <Link to="/system">系统</Link> },
