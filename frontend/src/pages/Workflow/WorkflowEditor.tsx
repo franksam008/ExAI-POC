@@ -35,6 +35,7 @@ const nodeTypeOptions = [
     { label: 'H2O 评估', value: 'h2o_eval' },
     { label: 'H2O 预测', value: 'h2o_predict' },
     { label: 'H2O 导出模型', value: 'h2o_export' },
+    { label: '加载H2O模型', value: 'load_h2o_model' },
     { label: 'MLflow 记录模型', value: 'mlflow_log' },
     { label: 'MLflow 注册模型', value: 'mlflow_register' },
     { label: 'MLflow 阶段切换', value: 'mlflow_transition' },
@@ -42,13 +43,13 @@ const nodeTypeOptions = [
     { label: 'MLflow 获取模型版本', value: 'mlflow_list_versions' },
 ];
 
-const nodeWidth = 180;
+const nodeWidth = 100;
 const nodeHeight = 60;
 
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     const g = new dagre.graphlib.Graph();
     g.setDefaultEdgeLabel(() => ({}));
-    g.setGraph({ rankdir: 'TB', nodesep: 40, ranksep: 80 });
+    g.setGraph({ rankdir: 'TB', nodesep: 20, ranksep: 40 });
     nodes.forEach((node) => {
         g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
     });

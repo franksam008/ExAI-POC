@@ -11,7 +11,7 @@ const ModelList: React.FC = () => {
     const [data, setData] = useState<any[]>([]);
 
     useEffect(() => {
-        listModels().then(setData).catch(() => setData([]));
+        listModels().then(setData);//.catch(() => setData([]));
     }, []);
 
     return (
@@ -21,8 +21,9 @@ const ModelList: React.FC = () => {
             columns={[
                 { title: '模型名称', dataIndex: 'name' },
                 { title: '版本', dataIndex: 'version' },
-                { title: '阶段', dataIndex: 'stage' },
-                { title: "来源", dataIndex: "source" },
+                { title: '阶段', dataIndex: 'current_stage' },
+                { title: "描述", dataIndex: "description" },
+                { title: "最新更新", dataIndex: "last_updated_timestamp" }
             ]}
         />
     );
